@@ -24,7 +24,6 @@
             selectors.forEach(selector => {
                 document.querySelectorAll(selector).forEach(element => {
                     element.remove();
-                    console.log(`已删除元素: ${selector}`);
                 });
             });
         };
@@ -38,13 +37,11 @@
                         // 检查新增节点是否匹配目标
                         if (node.matches?.(selector)) {
                             node.remove();
-                            console.log(`动态删除新增元素: ${selector}`);
                         }
                         // 检查子节点是否匹配
                         if (node.querySelectorAll) {
                             node.querySelectorAll(selector).forEach(el => {
                                 el.remove();
-                                console.log(`动态删除子元素: ${selector}`);
                             });
                         }
                     });
