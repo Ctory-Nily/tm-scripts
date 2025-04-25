@@ -2,7 +2,7 @@
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
 // @version      0.5
-// @description  在必应首页左下角添加按钮, 允许用户自定义背景图片, 并删除轮播图
+// @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
 // @match        https://www.bing.com/
