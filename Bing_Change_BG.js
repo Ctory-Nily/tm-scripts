@@ -163,7 +163,7 @@
             ];
 
             elements.forEach(el => {
-                if (el) el.style.backgroundImage = '';
+                if (el) el.style.backgroundImage = null; // 或者 el.style.removeProperty('background-image');
             });
 
             setTimeout(() => location.reload(), 300);
