@@ -123,6 +123,8 @@
             if (confirm('确定要恢复默认背景吗？')) {
                 localStorage.removeItem('microsoftCustomBackground');
                 resetBackground();
+                // 完全重新加载页面以确保恢复所有默认行为
+                setTimeout(() => location.reload(), 300);
             }
         });
 
@@ -163,10 +165,11 @@
             ];
 
             elements.forEach(el => {
-                if (el) el.style.removeProperty("background-image");  // 仅移除 background-image
+                if (el) {
+                    // 完全移除style属性而不仅仅是background-image
+                    el.removeAttribute("style");
+                }
             });
-
-            setTimeout(() => location.reload(), 300);
         }
     });
 
