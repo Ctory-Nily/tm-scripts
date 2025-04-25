@@ -5,8 +5,8 @@
 // @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
-// @match        https://www.bing.com/
 // @match        https://cn.bing.com/*
+// @match        https://www.bing.com/
 // @match        https://cn.bing.com/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bing.com
 // @grant        GM_addStyle
