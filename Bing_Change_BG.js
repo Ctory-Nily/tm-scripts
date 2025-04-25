@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.7
 // @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -18,6 +18,7 @@
     // 永久删除元素并监控重新出现
     function permanentlyRemoveElement() {
         const targetSelector = ".musCard";
+        const removeSelector = ".hp_trivia_outer";
 
         // 初始删除
         const targetElement = document.querySelector(targetSelector);
@@ -25,8 +26,14 @@
             targetElement.remove();
         }
 
+        const removeElement = document.querySelectorAll(removeSelector);
+        if (removeElement) {
+            removeElement.remove();
+        }
+
+
         // 设置MutationObserver监控DOM变化
-        const observer = new MutationObserver(function(mutations) {
+        const observer1 = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 mutation.addedNodes.forEach(function(node) {
                     // 检查新增节点或子节点是否匹配目标元素
@@ -43,8 +50,31 @@
             });
         });
 
+        const observer2 = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    // Check if the added node itself matches the selector
+                    if (node.matches && node.matches(removeSelector)) {
+                        node.remove();
+                    }
+                    // Check for matching elements within the added node
+                    if (node.querySelectorAll) {
+                        const elements = node.querySelectorAll(removeSelector);
+                        elements.forEach(el => {
+                            el.remove();
+                        });
+                    }
+                });
+            });
+        });
+
         // 开始监控整个文档的DOM变化
-        observer.observe(document.body, {
+        observer1.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        observer2.observe(document.body, {
             childList: true,
             subtree: true
         });
