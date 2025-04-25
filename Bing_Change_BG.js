@@ -16,75 +16,52 @@
     'use strict';
 
     // 永久删除元素并监控重新出现
-    function permanentlyRemoveElement() {
-        const targetSelector = ".musCard";
-        const removeSelector = ".hp_trivia_outer";
+    function permanentlyRemoveElements() {
+        const selectors = [".musCard", ".hp_trivia_outer"];
 
-        // 初始删除
-        const targetElement = document.querySelector(targetSelector);
-        if (targetElement) {
-            targetElement.remove();
-        }
-
-        const removeElement = document.querySelectorAll(removeSelector);
-        if (removeElement) {
-            removeElement.remove();
-        }
-
-
-        // 设置MutationObserver监控DOM变化
-        const observer1 = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                mutation.addedNodes.forEach(function(node) {
-                    // 检查新增节点或子节点是否匹配目标元素
-                    if (node.matches && node.matches(targetSelector)) {
-                        node.remove();
-                    }
-                    if (node.querySelectorAll) {
-                        const elements = node.querySelectorAll(targetSelector);
-                        elements.forEach(el => {
-                            el.remove();
-                        });
-                    }
+        // 1. 初始删除所有匹配元素
+        const removeElements = () => {
+            selectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(element => {
+                    element.remove();
+                    console.log(`已删除元素: ${selector}`);
+                });
+            });
+        };
+        removeElements(); // 首次执行
+    
+        // 2. MutationObserver 监控动态加载
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    selectors.forEach(selector => {
+                        // 检查新增节点是否匹配目标
+                        if (node.matches?.(selector)) {
+                            node.remove();
+                            console.log(`动态删除新增元素: ${selector}`);
+                        }
+                        // 检查子节点是否匹配
+                        if (node.querySelectorAll) {
+                            node.querySelectorAll(selector).forEach(el => {
+                                el.remove();
+                                console.log(`动态删除子元素: ${selector}`);
+                            });
+                        }
+                    });
                 });
             });
         });
-
-        const observer2 = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                mutation.addedNodes.forEach(function(node) {
-                    // Check if the added node itself matches the selector
-                    if (node.matches && node.matches(removeSelector)) {
-                        node.remove();
-                    }
-                    // Check for matching elements within the added node
-                    if (node.querySelectorAll) {
-                        const elements = node.querySelectorAll(removeSelector);
-                        elements.forEach(el => {
-                            el.remove();
-                        });
-                    }
-                });
-            });
-        });
-
-        // 开始监控整个文档的DOM变化
-        observer1.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        observer2.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        // 额外检查：定时检查（应对某些特殊情况）
+        observer.observe(document.body, { childList: true, subtree: true });
+    
+        // 3. 额外定时检查（1秒1次，防止漏网之鱼）
         setInterval(() => {
-            const elements = document.querySelectorAll(targetSelector);
-            elements.forEach(el => {
-                el.remove();
-                console.log("定时检查发现元素，已删除");
+            selectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(element => {
+                    if (document.body.contains(element)) { // 确保元素仍在DOM中
+                        element.remove();
+                        console.log(`定时检查删除: ${selector}`);
+                    }
+                });
             });
         }, 1000);
     }
@@ -93,7 +70,7 @@
     window.addEventListener('load', function() {
 
         // 永久删除元素
-        permanentlyRemoveElement();
+        permanentlyRemoveElements();
 
         // 创建主容器
         const widgetContainer = document.createElement('div');
