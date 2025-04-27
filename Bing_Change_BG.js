@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.8
 // @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -108,9 +108,9 @@
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                // 检查文件大小（限制为2MB）
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('图片大小不能超过2MB');
+                // 检查文件大小（限制为4MB）
+                if (file.size > 4 * 1024 * 1024) {
+                    alert('图片大小不能超过4MB');
                     return;
                 }
 
