@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -28,7 +28,7 @@
             });
         };
         removeElements(); // 首次执行
-    
+
         // 2. MutationObserver 监控动态加载
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
@@ -49,7 +49,7 @@
             });
         });
         observer.observe(document.body, { childList: true, subtree: true });
-    
+
         // 3. 额外定时检查（1秒1次，防止漏网之鱼）
         setInterval(() => {
             selectors.forEach(selector => {
@@ -65,7 +65,6 @@
 
     // 等待页面加载完成
     window.addEventListener('load', function() {
-
         // 永久删除元素
         permanentlyRemoveElements();
 
@@ -127,10 +126,24 @@
         // 恢复默认背景
         resetBtn.addEventListener('click', () => {
             if (confirm('确定要恢复默认背景吗？')) {
+                // 清除所有相关存储
                 localStorage.removeItem('microsoftCustomBackground');
+                // 清除必应自己的背景相关cookie
+                document.cookie.split(";").forEach(cookie => {
+                    if (cookie.trim().startsWith("_EDGE_S") ||
+                        cookie.trim().startsWith("MUID") ||
+                        cookie.trim().startsWith("SRCHD")) {
+                        const eqPos = cookie.indexOf("=");
+                        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.bing.com";
+                    }
+                });
+
                 resetBackground();
-                // 完全重新加载页面以确保恢复所有默认行为
-                setTimeout(() => location.reload(), 300);
+                // 强制刷新页面以确保完全恢复
+                setTimeout(() => {
+                    window.location.href = window.location.href.split('?')[0] + '?reset=' + Date.now();
+                }, 300);
             }
         });
 
@@ -151,14 +164,27 @@
          * @param {string} imageUrl - 图片URL
          */
         function applyBackground(imageUrl) {
-            const elements = [
-                document.querySelector(".img_cont"),
-                document.querySelector(".hp_top_cover")
-            ];
+            // 先预加载图片
+            const img = new Image();
+            img.onload = function() {
+                // 图片加载完成后才应用
+                const elements = [
+                    document.querySelector(".img_cont"),
+                    document.querySelector(".hp_top_cover")
+                ];
 
-            elements.forEach(el => {
-                if (el) el.style.backgroundImage = `url(${imageUrl})`;
-            });
+                elements.forEach(el => {
+                    if (el) {
+                        el.style.backgroundImage = `url(${imageUrl})`;
+                        // 添加过渡效果
+                        el.style.transition = "background-image 0.2s ease";
+                    }
+                });
+            };
+            img.onerror = function() {
+                console.error("背景图片加载失败");
+            };
+            img.src = imageUrl;
         }
 
         /**
