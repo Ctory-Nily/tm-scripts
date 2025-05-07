@@ -1,286 +1,772 @@
 // ==UserScript==
 // @name         Bing 自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      0.9.5
-// @description  在必应首页左下角添加按钮, 允许用户自定义背景图片
+// @version      1.0.0
+// @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
 // @match        https://cn.bing.com/*
 // @match        https://www.bing.com/
 // @match        https://cn.bing.com/
+// @exclude      https://www.bing.com/search*
+// @exclude      https://cn.bing.com/search*
+// @exclude      https://www.bing.com/account*
+// @exclude      https://cn.bing.com/account*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bing.com
 // @grant        GM_addStyle
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // 创建按钮容器
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'bg-controls';
-
-    // 创建上传按钮
-    const uploadBtn = document.createElement('button');
-    uploadBtn.id = 'ms-custom-bg-btn';
-
-    // 创建图标
-    const icon = document.createElement('span');
-    icon.id = 'ms-btn-icon';
-    icon.innerHTML = '<svg t="1745479704533" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9867" width="20" height="20"><path d="M903.68 919.381333c53.418667 0 96.682667-43.264 96.682667-96.597333 0-35.584-32.256-110.762667-96.682667-225.450667-64.341333 114.688-96.597333 189.866667-96.597333 225.450667 0 53.333333 43.264 96.597333 96.597333 96.597333z" fill="#ffffff" p-id="9868"></path><path d="M510.037333 171.52l331.946667 331.946667a85.333333 85.333333 0 0 1 0 120.576l-331.946667 331.946666a85.333333 85.333333 0 0 1-120.661333 0L57.514667 623.957333a85.333333 85.333333 0 0 1 0-120.661333L365.226667 195.669333l-18.090667-18.090666a59.733333 59.733333 0 1 1 84.48-84.48l78.506667 78.506666z m-343.893333 392.192L449.706667 847.36l283.648-283.648L449.706667 280.149333 166.144 563.712z" fill="#ffffff" p-id="9869"></path><path d="M793.258667 564.48l-362.069334 361.984L69.12 564.48z" fill="#ffffff" p-id="9870"></path></svg>';
-    uploadBtn.appendChild(icon);
-    controlsDiv.appendChild(uploadBtn);
-
-    // 创建恢复默认按钮
-    const resetBtn = document.createElement('button');
-    resetBtn.id = 'ms-reset-bg-btn';
-
-    // 创建恢复图标
-    const resetIcon = document.createElement('span');
-    resetIcon.id = 'ms-btn-icon';
-    resetIcon.innerHTML = '<svg t="1745479925452" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11737" width="20" height="20"><path d="M716.8 290.133333c-110.933333-102.4-281.6-106.666667-396.8-12.8S170.666667 537.6 247.466667 665.6c59.733333 106.666667 179.2 166.4 302.933333 149.333333s221.866667-102.4 256-221.866666c8.533333-34.133333 42.666667-51.2 76.8-42.666667 34.133333 8.533333 51.2 42.666667 42.666667 76.8-68.266667 226.133333-302.933333 354.133333-524.8 290.133333C174.933333 853.333333 42.666667 618.666667 106.666667 392.533333c42.666667-145.066667 153.6-256 298.666666-298.666666s298.666667 0 405.333334 102.4l81.066666-81.066667c8.533333-8.533333 21.333333-12.8 34.133334-8.533333 4.266667 12.8 12.8 21.333333 12.8 34.133333v264.533333c0 17.066667-12.8 29.866667-29.866667 29.866667h-260.266667c-12.8 0-25.6-8.533333-29.866666-17.066667s0-25.6 8.533333-34.133333l89.6-93.866667z" p-id="11738" fill="#ffffff"></path></svg>';
-    resetBtn.appendChild(resetIcon);
-    controlsDiv.appendChild(resetBtn);
-
-    // 创建文件输入元素
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.id = 'bgFileInput';
-    fileInput.accept = 'image/*';
-    controlsDiv.appendChild(fileInput);
-
-    // 将按钮容器添加到页面
-    document.body.appendChild(controlsDiv);
-
-    // [其余函数保持不变...]
-    // 替换背景图片函数
-    function replaceBackground(imageFile) {
-        if (!imageFile) return;
-
-        if (imageFile.size > 4 * 1024 * 1024) {
-            alert('图片大小不能超过4MB');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const imageData = e.target.result;
-
-            const imgCont = document.querySelector('.img_cont');
-            const hpTopCover = document.querySelector('.hp_top_cover');
-
-            if (imgCont) {
-                imgCont.style.backgroundImage = `url("${imageData}")`;
-                imgCont.style.backgroundSize = 'cover';
-                imgCont.style.backgroundPosition = 'center';
-                imgCont.style.backgroundRepeat = 'no-repeat';
+    // 等待页面加载完成
+    function waitForPageLoad() {
+        return new Promise(resolve => {
+            if (document.readyState === 'complete') {
+                resolve();
+            } else {
+                window.addEventListener('load', resolve);
             }
-
-            if (hpTopCover) {
-                hpTopCover.style.backgroundImage = `url("${imageData}")`;
-                hpTopCover.style.backgroundSize = 'cover';
-                hpTopCover.style.backgroundPosition = 'center';
-                hpTopCover.style.backgroundRepeat = 'no-repeat';
-            }
-
-            localStorage.setItem('customBingBg', imageData);
-        };
-        reader.readAsDataURL(imageFile);
+        });
     }
 
-    // 重置背景函数
-    function resetBackground() {
-        if (!confirm('确定要恢复默认背景吗？')) {
-            return;
-        }
+    // 配置存储
+    const CONFIG_KEY = 'bingBackgroundConfig';
+    const POSITION_KEY = 'bingButtonPosition';
+    const BG_IMAGE_KEY = 'bingCustomBackground'; // localStorage中的背景图片key
 
+    // 默认配置
+    const defaultConfig = {
+        removeQuestCard: true,
+        removeToggleBtn: true,
+        theme: 'system'
+    };
+
+    // 默认按钮位置
+    const defaultPosition = {
+        left: '10px',
+        top: 'auto',
+        bottom: '10px',
+        right: 'auto'
+    };
+
+    // 获取当前配置
+    function getConfig() {
+        const saved = GM_getValue(CONFIG_KEY, JSON.stringify(defaultConfig));
+        return JSON.parse(saved);
+    }
+
+    // 获取按钮位置
+    function getButtonPosition() {
+        const saved = GM_getValue(POSITION_KEY, JSON.stringify(defaultPosition));
+        return JSON.parse(saved);
+    }
+
+    // 保存配置
+    function saveConfig(config) {
+        GM_setValue(CONFIG_KEY, JSON.stringify(config));
+        applyConfig(config);
+    }
+
+    // 保存按钮位置
+    function saveButtonPosition(position) {
+        GM_setValue(POSITION_KEY, JSON.stringify(position));
+    }
+
+    // 获取背景图片
+    function getBackgroundImage() {
+        return localStorage.getItem(BG_IMAGE_KEY) || '';
+    }
+
+    // 保存背景图片
+    function saveBackgroundImage(imageUrl) {
+        if (imageUrl) {
+            localStorage.setItem(BG_IMAGE_KEY, imageUrl);
+        } else {
+            localStorage.removeItem(BG_IMAGE_KEY);
+        }
+    }
+
+    // 应用配置
+    function applyConfig(config) {
+        applyTheme(config.theme);
+
+        const bgImage = getBackgroundImage();
         const imgCont = document.querySelector('.img_cont');
         const hpTopCover = document.querySelector('.hp_top_cover');
 
-        if (imgCont) imgCont.style.backgroundImage = '';
-        if (hpTopCover) hpTopCover.style.backgroundImage = '';
+        if (bgImage) {
+            if (imgCont) imgCont.style.backgroundImage = `url("${bgImage}")`;
+            if (hpTopCover) hpTopCover.style.backgroundImage = `url("${bgImage}")`;
+        }
 
-        localStorage.removeItem('customBingBg');
+        if (config.removeQuestCard) {
+            const musCard = document.querySelector('.musCard');
+            if (musCard) musCard.remove();
+        }
 
-        document.cookie = 'SRCHD=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
-        document.cookie = 'SRCHUID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
-        document.cookie = 'SRCHUSR=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+        if (config.removeToggleBtn) {
+            const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
+            if (hpTriviaOuter) hpTriviaOuter.remove();
+        }
 
-        location.reload();
+        updateScrollContStyle(config.removeToggleBtn);
     }
 
-    // 检查是否有保存的自定义背景
-    function checkSavedBackground() {
-        const savedBg = localStorage.getItem('customBingBg');
-        if (savedBg) {
-            const imgCont = document.querySelector('.img_cont');
-            const hpTopCover = document.querySelector('.hp_top_cover');
+    // 应用主题
+    function applyTheme(theme) {
+        const root = document.documentElement;
+        root.classList.remove('bing-theme-light', 'bing-theme-dark');
 
-            if (imgCont) {
-                imgCont.style.backgroundImage = `url("${savedBg}")`;
-                imgCont.style.backgroundSize = 'cover';
-                imgCont.style.backgroundPosition = 'center';
-                imgCont.style.backgroundRepeat = 'no-repeat';
-            }
+        let effectiveTheme = theme;
+        if (theme === 'system') {
+            effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
 
-            if (hpTopCover) {
-                hpTopCover.style.backgroundImage = `url("${savedBg}")`;
-                hpTopCover.style.backgroundSize = 'cover';
-                hpTopCover.style.backgroundPosition = 'center';
-                hpTopCover.style.backgroundRepeat = 'no-repeat';
-            }
+        if (effectiveTheme === 'dark') {
+            root.classList.add('bing-theme-dark');
+        } else {
+            root.classList.add('bing-theme-light');
         }
     }
 
-    // 移除不需要的元素
-    function removeUnwantedElements() {
-        const musCard = document.querySelector('.musCard');
-        const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
-
-        if (musCard) musCard.remove();
-        if (hpTriviaOuter) hpTriviaOuter.remove();
+    // 更新scroll_cont样式
+    function updateScrollContStyle(removeToggleBtn) {
+        const scrollCont = document.getElementById('scroll_cont');
+        if (scrollCont) {
+            scrollCont.style.marginTop = removeToggleBtn ? '47px' : '';
+        }
     }
 
-    // 事件监听器
-    uploadBtn.addEventListener('click', function() {
-        fileInput.click();
-    });
-
-    fileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            replaceBackground(this.files[0]);
-        }
-        this.value = '';
-    });
-
-    resetBtn.addEventListener('click', resetBackground);
-
-    // 页面加载时检查
-    window.addEventListener('load', function() {
-        setTimeout(() => {
-            checkSavedBackground();
-            removeUnwantedElements();
-        }, 1000);
-    });
-
-    // 永久监听并移除不需要的元素
-    const observer = new MutationObserver(function(mutations) {
-        removeUnwantedElements();
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-
-    // 添加自定义CSS样式
+    // 添加CSS样式
     GM_addStyle(`
-        .bg-controls {
+        :root.bing-theme-light {
+            --bing-primary-color: #0078d4;
+            --bing-bg-color: #ffffff;
+            --bing-text-color: #000000;
+            --bing-panel-bg: rgba(255, 255, 255, 0.95);
+            --bing-panel-text: #333333;
+            --bing-btn-hover: rgba(0, 0, 0, 0.1);
+        }
+
+        :root.bing-theme-dark {
+            --bing-primary-color: #0078d4;
+            --bing-bg-color: #1e1e1e;
+            --bing-text-color: #ffffff;
+            --bing-panel-bg: rgba(30, 30, 30, 0.95);
+            --bing-panel-text: #ffffff;
+            --bing-btn-hover: rgba(255, 255, 255, 0.1);
+        }
+
+        .bing-settings-btn {
             position: fixed;
-            left: 0;
-            bottom: 10px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            padding-left: 5px;
-        }
-
-        #ms-custom-bg-btn {
-            padding: 10px;
-            background: transparent;
-            color: white;
-            border: none;
-            border-radius: 0 4px 4px 0;
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
+            z-index: 99999;
             width: 40px;
             height: 40px;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
-        #ms-custom-bg-btn:hover {
-            width: 120px;
-            background: rgba(0, 120, 212, 0.7);
-            padding-left: 10px;
-        }
-
-        #ms-custom-bg-btn::before {
-            content: '上传背景';
-            position: absolute;
-            left: 40px;
-            top: 48%;
-            transform: translateY(-50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        #ms-custom-bg-btn:hover::before {
-            opacity: 1;
-        }
-
-        #ms-reset-bg-btn {
-            padding: 10px;
-            background: transparent;
-            color: white;
+            background: var(--bing-primary-color);
             border: none;
-            border-radius: 0 4px 4px 0;
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            width: 40px;
-            height: 40px;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
+            border-radius: 50%;
+            cursor: move;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
+            transition: all 0.3s ease;
+            touch-action: none;
+            user-select: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        #ms-reset-bg-btn:hover {
-            width: 120px;
-            background: rgba(40, 40, 40, 0.7);
-            padding-left: 10px;
+        .bing-settings-btn:hover {
+            background: #565656;
+            transform: scale(1.1);
         }
 
-        #ms-reset-bg-btn::before {
-            content: '恢复默认';
-            position: absolute;
-            left: 40px;
-            top: 48%;
-            transform: translateY(-50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .bing-settings-btn.dragging {
+            opacity: 0.8;
+            transform: scale(1.1);
+            cursor: grabbing;
         }
 
-        #ms-reset-bg-btn:hover::before {
-            opacity: 1;
+        .bing-settings-btn.panel-open {
+            cursor: default;
         }
 
-        #ms-btn-icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-right: 0;
-            flex-shrink: 0;
+        .bing-settings-icon {
+            width: 24px;
+            height: 24px;
+            color: white;
+            pointer-events: none;
         }
 
-        #bgFileInput {
+        .bing-settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100001;
+            width: 400px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--bing-panel-bg);
+            border-radius: 8px;
+            padding: 20px;
+            color: var(--bing-panel-text);
+            font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .bing-settings-panel h3 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .bing-settings-section {
+            margin-bottom: 20px;
+        }
+
+        .bing-settings-section h4 {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+
+        .bing-settings-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .bing-settings-option label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .bing-settings-option input[type="checkbox"],
+        .bing-settings-option select {
+            margin-right: 10px;
+        }
+
+        .bing-settings-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .bing-settings-btn-group button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .bing-settings-btn-primary {
+            background: var(--bing-primary-color);
+            color: white;
+        }
+
+        .bing-settings-btn-primary:hover {
+            background: #106ebe;
+        }
+
+        .bing-settings-btn-secondary {
+            background: var(--bing-btn-hover);
+            color: var(--bing-panel-text);
+        }
+
+        .bing-settings-btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        #bingBgFileInput {
             display: none;
         }
 
-        #scroll_cont {
-            margin-top: 47px !important;
+        .bing-theme-selector {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: var(--bing-panel-bg);
+            color: var(--bing-panel-text);
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .bing-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100000;
+            display: none;
         }
     `);
+
+    // 提示窗口
+    function showSaveSuccess(message = "保存成功", duration = 1000) {
+        const div = document.createElement("div");
+        div.innerHTML = `✔ ${message}`;
+        div.style.position = "fixed";
+        div.style.top = "50%";
+        div.style.left = "50%";
+        div.style.transform = "translate(-50%, -50%)";
+        div.style.zIndex = "9999";
+        div.style.backgroundColor = "#4caf50";
+        div.style.color = "white";
+        div.style.padding = "15px 30px";
+        div.style.borderRadius = "8px";
+        div.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
+        div.style.fontSize = "18px";
+        div.style.fontWeight = "bold";
+        div.style.opacity = "1";
+        div.style.transition = "opacity 0.5s ease-out";
+
+        document.body.appendChild(div);
+
+        setTimeout(() => {
+            div.style.opacity = "0";
+            setTimeout(() => div.remove(), 500);
+        }, duration);
+    }
+
+    // 创建设置按钮
+    function createSettingsButton() {
+        const settingsBtn = document.createElement('button');
+        settingsBtn.className = 'bing-settings-btn';
+        settingsBtn.title = 'Bing 背景配置';
+        settingsBtn.innerHTML = `
+            <svg class="bing-settings-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        `;
+
+        const position = getButtonPosition();
+        Object.keys(position).forEach(key => {
+            if (position[key] !== 'auto') {
+                settingsBtn.style[key] = position[key];
+            }
+        });
+
+        document.body.appendChild(settingsBtn);
+        return settingsBtn;
+    }
+
+    // 设置拖动功能
+    function setupDrag(element) {
+        let isDragging = false;
+        let offsetX, offsetY;
+        let startX, startY;
+        let lastX = 0, lastY = 0;
+        let velocityX = 0, velocityY = 0;
+        let animationFrame;
+        let allowDrag = true;
+
+        // 添加事件监听
+        element.addEventListener('mousedown', startDrag);
+        element.addEventListener('touchstart', startDrag, { passive: false });
+
+        function startDrag(e) {
+            if (!allowDrag) return;
+
+            // 记录点击位置
+            const rect = element.getBoundingClientRect();
+            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+            offsetX = clientX - rect.left;
+            offsetY = clientY - rect.top;
+            startX = clientX;
+            startY = clientY;
+            lastX = clientX;
+            lastY = clientY;
+
+            // 停止任何现有的惯性动画
+            cancelAnimationFrame(animationFrame);
+            velocityX = 0;
+            velocityY = 0;
+
+            // 开始拖动
+            isDragging = true;
+            element.classList.add('dragging');
+            element.style.transition = 'none'; // 禁用过渡效果
+            document.body.style.userSelect = 'none'; // 防止选中文本
+
+            // 添加事件监听
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            // 获取当前位置
+            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+
+            // 计算速度（用于惯性效果）
+            velocityX = clientX - lastX;
+            velocityY = clientY - lastY;
+            lastX = clientX;
+            lastY = clientY;
+
+            // 计算新位置
+            let x = clientX - offsetX;
+            let y = clientY - offsetY;
+
+            // 边界约束
+            const maxX = window.innerWidth - element.offsetWidth;
+            const maxY = window.innerHeight - element.offsetHeight;
+            x = Math.max(0, Math.min(x, maxX));
+            y = Math.max(0, Math.min(y, maxY));
+
+            // 应用新位置
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+            element.style.bottom = 'auto';
+            element.style.right = 'auto';
+        }
+
+        function stopDrag(e) {
+            if (!isDragging) return;
+
+            // 清除拖动状态
+            isDragging = false;
+            element.classList.remove('dragging');
+            document.body.style.userSelect = '';
+
+            // 移除事件监听
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchend', stopDrag);
+
+            // 检查是否是点击而非拖动
+            const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
+            const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
+
+            const movedX = Math.abs(clientX - startX);
+            const movedY = Math.abs(clientY - startY);
+
+            if (movedX < 5 && movedY < 5) {
+                element.dispatchEvent(new MouseEvent('click'));
+                return;
+            }
+
+            // 保存新位置
+            const newPosition = {
+                left: element.style.left,
+                top: element.style.top,
+                bottom: element.style.bottom,
+                right: element.style.right
+            };
+            saveButtonPosition(newPosition);
+
+            // 惯性效果
+            const animate = () => {
+                if (Math.abs(velocityX) < 0.1 && Math.abs(velocityY) < 0.1) {
+                    element.style.transition = ''; // 恢复过渡效果
+                    return;
+                }
+
+                let x = parseFloat(element.style.left) + velocityX;
+                let y = parseFloat(element.style.top) + velocityY;
+
+                // 边界约束
+                const maxX = window.innerWidth - element.offsetWidth;
+                const maxY = window.innerHeight - element.offsetHeight;
+                x = Math.max(0, Math.min(x, maxX));
+                y = Math.max(0, Math.min(y, maxY));
+
+                // 检查是否到达边界
+                if (x <= 0 || x >= maxX) velocityX = 0;
+                if (y <= 0 || y >= maxY) velocityY = 0;
+
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+                element.style.bottom = 'auto';
+                element.style.right = 'auto';
+
+                velocityX *= 0.95; // 摩擦力
+                velocityY *= 0.95;
+
+                animationFrame = requestAnimationFrame(animate);
+            };
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // 公开方法以控制拖动
+        return {
+            setAllowDrag: (value) => {
+                allowDrag = value;
+                if (!value) {
+                    element.classList.remove('dragging');
+                    isDragging = false;
+                }
+            }
+        };
+    }
+
+    // 创建设置面板
+    function createSettingsPanel() {
+        // 创建遮罩层
+        const overlay = document.createElement('div');
+        overlay.className = 'bing-modal-overlay';
+
+        // 创建面板
+        const settingsPanel = document.createElement('div');
+        settingsPanel.className = 'bing-settings-panel';
+        settingsPanel.innerHTML = `
+            <h3>Bing 背景配置</h3>
+
+            <div class="bing-settings-section">
+                <h4>面板主题</h4>
+                <div class="bing-settings-option">
+                    <select id="bingThemeSelector" class="bing-theme-selector">
+                        <option value="system">跟随系统</option>
+                        <option value="light">亮色</option>
+                        <option value="dark">暗色</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bing-settings-section">
+                <h4>背景配置</h4>
+                <div class="bing-settings-option">
+                    <button id="bingUploadBgBtn" class="bing-settings-btn-secondary">上传背景</button>&nbsp;&nbsp;
+                    <button id="bingResetBgBtn" class="bing-settings-btn-secondary">重置背景</button>
+                </div>
+            </div>
+
+            <div class="bing-settings-section">
+                <h4>元素配置</h4>
+                <div class="bing-settings-option">
+                    <input type="checkbox" id="bingRemoveQuestCard">
+                    <label for="bingRemoveQuestCard">移除问答卡片</label>
+                </div>
+                <div class="bing-settings-option">
+                    <input type="checkbox" id="bingRemoveToggleBtn">
+                    <label for="bingRemoveToggleBtn">移除切换图片按钮</label>
+                </div>
+            </div>
+
+            <div class="bing-settings-btn-group">
+                <button id="bingSaveConfigBtn" class="bing-settings-btn-primary">保存配置</button>
+                <button id="bingExportConfigBtn" class="bing-settings-btn-secondary">导出配置</button>
+                <button id="bingImportConfigBtn" class="bing-settings-btn-secondary">导入配置</button>
+                <button id="bingResetConfigBtn" class="bing-settings-btn-secondary">重置配置</button>
+            </div>
+        `;
+
+        // 将面板添加到遮罩层
+        overlay.appendChild(settingsPanel);
+        document.body.appendChild(overlay);
+
+        return {
+            panel: settingsPanel,
+            overlay: overlay
+        };
+    }
+
+    // 初始化脚本
+    async function init() {
+        await waitForPageLoad();
+
+        // 创建UI元素
+        const settingsBtn = createSettingsButton();
+        const { panel: settingsPanel, overlay: modalOverlay } = createSettingsPanel();
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = 'bingBgFileInput';
+        fileInput.accept = 'image/*';
+        document.body.appendChild(fileInput);
+
+        // 设置拖动功能
+        const dragController = setupDrag(settingsBtn);
+
+        // 加载配置
+        const currentConfig = getConfig();
+
+        // 初始化UI状态
+        document.getElementById('bingRemoveQuestCard').checked = currentConfig.removeQuestCard;
+        document.getElementById('bingRemoveToggleBtn').checked = currentConfig.removeToggleBtn;
+        document.getElementById('bingThemeSelector').value = currentConfig.theme || 'system';
+
+        // 应用配置
+        applyConfig(currentConfig);
+
+        // 事件监听
+        settingsBtn.addEventListener('click', function() {
+            modalOverlay.style.display = 'block';
+            settingsPanel.style.display = 'block';
+            settingsBtn.classList.add('panel-open');
+            dragController.setAllowDrag(false);
+        });
+
+        // ESC键关闭面板
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOverlay.style.display === 'block') {
+                closePanel();
+            }
+        });
+
+        function closePanel() {
+            modalOverlay.style.display = 'none';
+            settingsPanel.style.display = 'none';
+            settingsBtn.classList.remove('panel-open');
+            dragController.setAllowDrag(true);
+        }
+
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                closePanel();
+            }
+        });
+
+        document.getElementById('bingUploadBgBtn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                if (this.files[0].size > 4 * 1024 * 1024) {
+                    alert('图片大小不能超过4MB');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveBackgroundImage(e.target.result);
+                    applyConfig(getConfig());
+                };
+                reader.readAsDataURL(this.files[0]);
+                this.value = '';
+
+                closePanel();
+                showSaveSuccess('上传成功');
+
+            }
+        });
+
+        document.getElementById('bingResetBgBtn').addEventListener('click', function() {
+            if (confirm('确定要重置背景图片吗？')) {
+                saveBackgroundImage('');
+                applyConfig(getConfig());
+
+                document.cookie = 'SRCHD=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                document.cookie = 'SRCHUID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                document.cookie = 'SRCHUSR=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+
+                location.reload();
+            }
+        });
+
+        // 主题选择器实时预览
+        document.getElementById('bingThemeSelector').addEventListener('change', function() {
+            const theme = this.value;
+            applyTheme(theme);
+        });
+
+        document.getElementById('bingSaveConfigBtn').addEventListener('click', function() {
+            const config = getConfig();
+            config.removeQuestCard = document.getElementById('bingRemoveQuestCard').checked;
+            config.removeToggleBtn = document.getElementById('bingRemoveToggleBtn').checked;
+            config.theme = document.getElementById('bingThemeSelector').value;
+            saveConfig(config);
+            closePanel();
+
+            location.reload();
+        });
+
+        document.getElementById('bingExportConfigBtn').addEventListener('click', function() {
+            const config = getConfig();
+            const configStr = JSON.stringify(config);
+            const blob = new Blob([configStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bing_background_config.json';
+            a.click();
+
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('bingImportConfigBtn').addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = event => {
+                    try {
+                        const config = JSON.parse(event.target.result);
+                        saveConfig(config);
+
+                        location.reload();
+                    } catch (err) {
+                        alert('配置文件无效');
+                    }
+                };
+
+                reader.readAsText(file);
+            };
+
+            input.click();
+        });
+
+        document.getElementById('bingResetConfigBtn').addEventListener('click', function() {
+            if (confirm('确定要重置所有设置为默认值吗？')) {
+                saveConfig(defaultConfig);
+                saveBackgroundImage('');
+
+                document.cookie = 'SRCHD=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                document.cookie = 'SRCHUID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                document.cookie = 'SRCHUSR=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+
+                location.reload();
+            }
+        });
+
+        // 永久监听并移除不需要的元素
+        const observer = new MutationObserver(function() {
+            const config = getConfig();
+            if (config.removeQuestCard) {
+                const musCard = document.querySelector('.musCard');
+                if (musCard) musCard.remove();
+            }
+
+            if (config.removeToggleBtn) {
+                const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
+                if (hpTriviaOuter) hpTriviaOuter.remove();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    // 启动脚本
+    init();
 })();
