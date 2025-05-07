@@ -316,6 +316,63 @@
             display: none;
         }
 
+        /* 添加这些样式到你的GM_addStyle部分 */
+        .bing-settings-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .bing-settings-row h4 {
+            margin: 0;
+            min-width: 80px; /* 给标题固定宽度保持对齐 */
+        }
+
+        .bing-theme-selector {
+            flex: 1;
+        }
+
+        .bing-button-group {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .bing-settings-btn-secondary {
+            flex: 1;
+            white-space: nowrap;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .bing-settings-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .bing-setting-mobile-row {
+                flex-direction: row !important;
+                align-items: center;
+            }
+
+            .bing-settings-row h4 {
+                min-width: auto;
+            }
+
+            .bing-button-group {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .bing-theme-selector,
+            .bing-settings-btn-secondary {
+                width: 100%;
+                line-height: 30px;
+            }
+        }
+
         /* 添加媒体查询 */
         @media (max-width: 480px) {
             .bing-settings-panel {
@@ -335,9 +392,7 @@
             .bing-settings-section h4 {
                 font-size: 14px;
             }
-        }
 
-        @media (max-width: 480px) {
             .bing-settings-btn {
                 width: 35px;
                 height: 35px;
@@ -581,8 +636,8 @@
             <h3>Bing 背景配置</h3>
 
             <div class="bing-settings-section">
-                <h4>面板主题</h4>
-                <div class="bing-settings-option">
+                <div class="bing-settings-row bing-setting-mobile-row">
+                    <h4>面板主题</h4>
                     <select id="bingThemeSelector" class="bing-theme-selector">
                         <option value="system">跟随系统</option>
                         <option value="light">亮色</option>
@@ -592,10 +647,12 @@
             </div>
 
             <div class="bing-settings-section">
-                <h4>背景配置</h4>
-                <div class="bing-settings-option">
-                    <button id="bingUploadBgBtn" class="bing-settings-btn-secondary">上传背景</button>&nbsp;&nbsp;
-                    <button id="bingResetBgBtn" class="bing-settings-btn-secondary">重置背景</button>
+                <div class="bing-settings-row">
+                    <h4>背景配置</h4>
+                    <div class="bing-button-group">
+                        <button id="bingUploadBgBtn" class="bing-settings-btn-secondary">上传背景</button>
+                        <button id="bingResetBgBtn" class="bing-settings-btn-secondary">重置背景</button>
+                    </div>
                 </div>
             </div>
 
