@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Bing 自定义背景图片
+// @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.6
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -16,6 +16,8 @@
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @downloadURL https://update.greasyfork.org/scripts/533877/%E5%BF%85%E5%BA%94%E9%A6%96%E9%A1%B5%E8%87%AA%E5%AE%9A%E4%B9%89%E8%83%8C%E6%99%AF%E5%9B%BE%E7%89%87.user.js
+// @updateURL https://update.greasyfork.org/scripts/533877/%E5%BF%85%E5%BA%94%E9%A6%96%E9%A1%B5%E8%87%AA%E5%AE%9A%E4%B9%89%E8%83%8C%E6%99%AF%E5%9B%BE%E7%89%87.meta.js
 // ==/UserScript==
 
 (function() {
@@ -764,22 +766,89 @@
 
         fileInput.addEventListener('change', function(e) {
             if (this.files && this.files[0]) {
-                if (this.files[0].size > 4 * 1024 * 1024) {
-                    alert('图片大小不能超过4MB');
+                const file = this.files[0];
+
+                // 可以保留一个初步的文件大小检查
+                if (file.size > 5 * 1024 * 1024) { // 比如原始文件不超过5MB
+                    alert('图片文件过大，请选择5MB以下的图片。脚本将尝试压缩。');
                     return;
                 }
 
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    saveBackgroundImage(e.target.result);
-                    applyConfig(getConfig());
-                };
-                reader.readAsDataURL(this.files[0]);
-                this.value = '';
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 2560; // 最大宽度
+                        const MAX_HEIGHT = 1440; // 最大高度
+                        let width = img.width;
+                        let height = img.height;
 
-                closePanel();
-                showSaveSuccess('上传成功');
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
 
+                        // 尝试使用 image/jpeg 或 image/webp 进行压缩
+                        let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.95); // 0.75 是压缩质量
+                        console.log('Original size (approx Base64):', event.target.result.length);
+                        console.log('Compressed size:', compressedDataUrl.length);
+
+                        // 检查压缩后的大小是否仍然太大 (可选，但推荐)
+                        // data:URL 长度大约是字节数的 4/3
+                        if (compressedDataUrl.length > 3.5 * 1024 * 1024 * 4/3) { // 估算压缩后localStorage占用约3.5MB
+                            alert('图片压缩后仍然过大，请尝试更小的图片或更高压缩率。');
+                            // 可以尝试更低的质量或提示用户
+                            // compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                            // if (compressedDataUrl.length > ...) return;
+                            return;
+                        }
+
+
+                        try {
+
+                            document.cookie = 'SRCHD=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                            document.cookie = 'SRCHUID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+                            document.cookie = 'SRCHUSR=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
+
+                            saveBackgroundImage(compressedDataUrl); // 保存压缩后的图片
+                            applyConfig(getConfig());
+                            showSaveSuccess('上传成功');
+                        } catch (quotaError) {
+                            if (quotaError.name === 'QuotaExceededError') {
+                                alert('存储空间不足！即使压缩后图片仍然过大，请尝试更小的图片，或清理浏览器缓存后重试。');
+                                // 考虑在这里提供清理旧背景的选项
+                                // localStorage.removeItem(BG_IMAGE_KEY);
+                            } else {
+                                alert('发生未知错误: ' + quotaError.message);
+                            }
+                        } finally {
+                            closePanel(); // 确保面板关闭
+                        }
+                    }
+                    img.onerror = function() {
+                        alert('无法加载图片文件。');
+                        closePanel();
+                    }
+                    img.src = event.target.result; // 先将原始 FileReader 結果给 Image 对象
+                }
+                reader.onerror = function() {
+                    alert('读取文件失败。');
+                    closePanel();
+                }
+                reader.readAsDataURL(file); // 读取原始文件为 data URL
+                this.value = ''; // 清空 file input
             }
         });
 
