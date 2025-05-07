@@ -206,13 +206,14 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 100001;
-            width: 400px;
-            max-width: 90%;
+            width: 80%;
+            max-width: 400px;
             max-height: 90vh;
             overflow-y: auto;
             background: var(--bing-panel-bg);
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
+            font-size: 14px;
             color: var(--bing-panel-text);
             font-family: 'Segoe UI', sans-serif;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -251,6 +252,9 @@
         .bing-settings-option input[type="checkbox"],
         .bing-settings-option select {
             margin-right: 10px;
+        }
+        .bing-settings-option button {
+            padding: 5px;
         }
 
         .bing-settings-btn-group {
@@ -311,6 +315,39 @@
             z-index: 100000;
             display: none;
         }
+
+        /* 添加媒体查询 */
+        @media (max-width: 480px) {
+            .bing-settings-panel {
+                width: 80%;
+                max-height: 80vh;
+                padding: 10px;
+            }
+
+            .bing-settings-btn-group {
+                flex-direction: column;
+            }
+
+            .bing-settings-btn-group button {
+                width: 100%;
+            }
+
+            .bing-settings-section h4 {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bing-settings-btn {
+                width: 35px;
+                height: 35px;
+            }
+
+            .bing-settings-icon {
+                width: 30px;
+                height: 30px;
+            }
+        }
     `);
 
     // 提示窗口
@@ -318,19 +355,22 @@
         const div = document.createElement("div");
         div.innerHTML = `✔ ${message}`;
         div.style.position = "fixed";
-        div.style.top = "50%";
+        div.style.top = "20%"; // 改为从顶部20%开始
         div.style.left = "50%";
         div.style.transform = "translate(-50%, -50%)";
         div.style.zIndex = "9999";
         div.style.backgroundColor = "#4caf50";
         div.style.color = "white";
-        div.style.padding = "15px 30px";
-        div.style.borderRadius = "8px";
-        div.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
-        div.style.fontSize = "18px";
+        div.style.padding = "12px 24px"; // 减小内边距
+        div.style.borderRadius = "6px";
+        div.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.3)";
+        div.style.fontSize = "16px"; // 减小字体大小
         div.style.fontWeight = "bold";
         div.style.opacity = "1";
         div.style.transition = "opacity 0.5s ease-out";
+        div.style.maxWidth = "80%"; // 限制最大宽度
+        div.style.textAlign = "center";
+        div.style.wordBreak = "break-word"; // 允许换行
 
         document.body.appendChild(div);
 
@@ -378,6 +418,9 @@
         element.addEventListener('touchstart', startDrag, { passive: false });
 
         function startDrag(e) {
+            // 如果是触摸事件且有多点触控，则不处理
+            if (e.touches && e.touches.length > 1) return;
+
             if (!allowDrag) return;
 
             // 记录点击位置
@@ -411,6 +454,9 @@
         }
 
         function drag(e) {
+            // 如果是触摸事件且有多点触控，则不处理
+            if (e.touches && e.touches.length > 1) return;
+
             if (!isDragging) return;
             e.preventDefault();
 
@@ -585,6 +631,17 @@
 
     // 初始化脚本
     async function init() {
+
+        // 添加视口meta标签
+        let meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = "viewport";
+            meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+            document.head.appendChild(meta);
+        }
+
+        // 等待页面加载完成
         await waitForPageLoad();
 
         // 创建UI元素
@@ -640,6 +697,11 @@
 
         document.getElementById('bingUploadBgBtn').addEventListener('click', function(e) {
             e.stopPropagation();
+
+            // 在手机上，使用accept属性限制文件类型
+            fileInput.accept = 'image/jpeg,image/png,image/webp';
+            fileInput.capture = 'environment'; // 允许直接拍照上传
+
             fileInput.click();
         });
 
