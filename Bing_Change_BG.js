@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.0.6
+// @version      1.0.7
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -16,8 +16,6 @@
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @downloadURL https://update.greasyfork.org/scripts/533877/%E5%BF%85%E5%BA%94%E9%A6%96%E9%A1%B5%E8%87%AA%E5%AE%9A%E4%B9%89%E8%83%8C%E6%99%AF%E5%9B%BE%E7%89%87.user.js
-// @updateURL https://update.greasyfork.org/scripts/533877/%E5%BF%85%E5%BA%94%E9%A6%96%E9%A1%B5%E8%87%AA%E5%AE%9A%E4%B9%89%E8%83%8C%E6%99%AF%E5%9B%BE%E7%89%87.meta.js
 // ==/UserScript==
 
 (function() {
@@ -41,8 +39,8 @@
 
     // 默认配置
     const defaultConfig = {
-        removeQuestCard: true,
-        removeToggleBtn: true,
+        removehpTriviaOuter: true,
+        removemusCard: true,
         theme: 'system'
     };
 
@@ -104,17 +102,17 @@
             if (hpTopCover) hpTopCover.style.backgroundImage = `url("${bgImage}")`;
         }
 
-        if (config.removeQuestCard) {
+        if (config.removehpTriviaOuter) {
             const musCard = document.querySelector('.musCard');
             if (musCard) musCard.remove();
         }
 
-        if (config.removeToggleBtn) {
+        if (config.removemusCard) {
             const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
             if (hpTriviaOuter) hpTriviaOuter.remove();
         }
 
-        updateScrollContStyle(config.removeToggleBtn);
+        updateScrollContStyle(config.removemusCard);
     }
 
     // 应用主题
@@ -135,10 +133,10 @@
     }
 
     // 更新scroll_cont样式
-    function updateScrollContStyle(removeToggleBtn) {
+    function updateScrollContStyle(removemusCard) {
         const scrollCont = document.getElementById('scroll_cont');
         if (scrollCont) {
-            scrollCont.style.marginTop = removeToggleBtn ? '47px' : '';
+            scrollCont.style.marginTop = removemusCard ? '47px' : '';
         }
     }
 
@@ -247,7 +245,6 @@
         }
 
         .bing-settings-option label {
-            flex: 1;
             cursor: pointer;
         }
 
@@ -344,6 +341,63 @@
         .bing-settings-btn-secondary {
             flex: 1;
             white-space: nowrap;
+        }
+
+        .bing-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .bing-switch input {
+            display: none;
+        }
+
+        .bing-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .bing-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .bing-slider {
+            background-color: #0078d4 !important;
+        }
+
+        input:checked + .bing-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* 暗色主题适配 */
+        :root.bing-theme-dark .bing-slider {
+            background-color: #555;
+        }
+
+        /* 调整选项布局 */
+        .bing-settings-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         /* 响应式调整 */
@@ -661,12 +715,18 @@
             <div class="bing-settings-section">
                 <h4>元素配置</h4>
                 <div class="bing-settings-option">
-                    <input type="checkbox" id="bingRemoveQuestCard">
-                    <label for="bingRemoveQuestCard">移除问答卡片</label>
+                    <label class="bing-switch">
+                        <input type="checkbox" id="bingremovehpTriviaOuter">
+                        <span class="bing-slider"></span>
+                    </label>
+                    <label for="bingremovehpTriviaOuter">移除问答卡片</label>
                 </div>
                 <div class="bing-settings-option">
-                    <input type="checkbox" id="bingRemoveToggleBtn">
-                    <label for="bingRemoveToggleBtn">移除切换图片按钮</label>
+                    <label class="bing-switch">
+                        <input type="checkbox" id="bingremovemusCard">
+                        <span class="bing-slider"></span>
+                    </label>
+                    <label for="bingremovemusCard">移除切换图片按钮</label>
                 </div>
             </div>
 
@@ -719,8 +779,8 @@
         const currentConfig = getConfig();
 
         // 初始化UI状态
-        document.getElementById('bingRemoveQuestCard').checked = currentConfig.removeQuestCard;
-        document.getElementById('bingRemoveToggleBtn').checked = currentConfig.removeToggleBtn;
+        document.getElementById('bingremovehpTriviaOuter').checked = currentConfig.removehpTriviaOuter;
+        document.getElementById('bingremovemusCard').checked = currentConfig.removemusCard;
         document.getElementById('bingThemeSelector').value = currentConfig.theme || 'system';
 
         // 应用配置
@@ -873,8 +933,8 @@
 
         document.getElementById('bingSaveConfigBtn').addEventListener('click', function() {
             const config = getConfig();
-            config.removeQuestCard = document.getElementById('bingRemoveQuestCard').checked;
-            config.removeToggleBtn = document.getElementById('bingRemoveToggleBtn').checked;
+            config.removehpTriviaOuter = document.getElementById('bingremovehpTriviaOuter').checked;
+            config.removemusCard = document.getElementById('bingremovemusCard').checked;
             config.theme = document.getElementById('bingThemeSelector').value;
             saveConfig(config);
             closePanel();
@@ -938,12 +998,14 @@
         // 永久监听并移除不需要的元素
         const observer = new MutationObserver(function() {
             const config = getConfig();
-            if (config.removeQuestCard) {
+            // 监听并移除切换按钮
+            if (config.removemusCard) {
                 const musCard = document.querySelector('.musCard');
                 if (musCard) musCard.remove();
             }
 
-            if (config.removeToggleBtn) {
+            // 监听并移除问答卡片
+            if (config.removehpTriviaOuter) {
                 const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
                 if (hpTriviaOuter) hpTriviaOuter.remove();
             }
