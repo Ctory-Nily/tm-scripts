@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -41,6 +41,8 @@
     const defaultConfig = {
         removehpTriviaOuter: true,
         removemusCard: true,
+        removeVsDefault: true,
+        removeFooter: true,
         theme: 'system'
     };
 
@@ -110,6 +112,16 @@
         if (config.removemusCard) {
             const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
             if (hpTriviaOuter) hpTriviaOuter.remove();
+        }
+
+        if (config.removeVsDefault) {
+            const vsDefault = document.getElementById('vs_default');
+            if (vsDefault) vsDefault.remove();
+        }
+
+        if (config.removeFooter) {
+            const footer = document.getElementById('footer');
+            if (footer) footer.remove();
         }
 
         updateScrollContStyle(config.removemusCard);
@@ -227,6 +239,9 @@
             text-align: center;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .bing-settings-section {
@@ -400,6 +415,35 @@
             margin-bottom: 12px;
         }
 
+        /* 主题切换按钮样式 */
+        .bing-theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bing-panel-text);
+        }
+
+        .bing-theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .bing-theme-toggle:hover {
+            opacity: 0.8;
+        }
+
+        .bing-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         /* 响应式调整 */
         @media (max-width: 600px) {
             .bing-settings-row {
@@ -452,6 +496,7 @@
             .bing-settings-btn {
                 width: 35px;
                 height: 35px;
+                inset: 350px auto auto 30px;
             }
 
             .bing-settings-icon {
@@ -689,18 +734,12 @@
         const settingsPanel = document.createElement('div');
         settingsPanel.className = 'bing-settings-panel';
         settingsPanel.innerHTML = `
-            <h3>Bing 背景配置</h3>
-
-            <div class="bing-settings-section">
-                <div class="bing-settings-row bing-setting-mobile-row">
-                    <h4>面板主题</h4>
-                    <select id="bingThemeSelector" class="bing-theme-selector">
-                        <option value="system">跟随系统</option>
-                        <option value="light">亮色</option>
-                        <option value="dark">暗色</option>
-                    </select>
-                </div>
-            </div>
+            <h3>
+                <button class="bing-theme-toggle" id="bingThemeToggle" title="切换主题">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <span>Bing 背景配置</span>
+            </h3>
 
             <div class="bing-settings-section">
                 <div class="bing-settings-row">
@@ -727,6 +766,20 @@
                         <span class="bing-slider"></span>
                     </label>
                     <label for="bingremovemusCard">移除切换图片按钮</label>
+                </div>
+                <div class="bing-settings-option">
+                    <label class="bing-switch">
+                        <input type="checkbox" id="bingremoveVsDefault">
+                        <span class="bing-slider"></span>
+                    </label>
+                    <label for="bingremoveVsDefault">移除设为主页按钮部分</label>
+                </div>
+                <div class="bing-settings-option">
+                    <label class="bing-switch">
+                        <input type="checkbox" id="bingremoveFooter">
+                        <span class="bing-slider"></span>
+                    </label>
+                    <label for="bingremoveFooter">移除页脚</label>
                 </div>
             </div>
 
@@ -781,7 +834,8 @@
         // 初始化UI状态
         document.getElementById('bingremovehpTriviaOuter').checked = currentConfig.removehpTriviaOuter;
         document.getElementById('bingremovemusCard').checked = currentConfig.removemusCard;
-        document.getElementById('bingThemeSelector').value = currentConfig.theme || 'system';
+        document.getElementById('bingremoveVsDefault').checked = currentConfig.removeVsDefault;
+        document.getElementById('bingremoveFooter').checked = currentConfig.removeFooter;
 
         // 应用配置
         applyConfig(currentConfig);
@@ -813,6 +867,39 @@
                 closePanel();
             }
         });
+
+        // 主题切换按钮功能
+        const themeToggle = document.getElementById('bingThemeToggle');
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = getConfig().theme;
+            let newTheme;
+
+            if (currentTheme === 'system') {
+                newTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+            } else {
+                newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            }
+
+            // 更新配置
+            const config = getConfig();
+            config.theme = newTheme;
+            saveConfig(config);
+
+            // 更新图标
+            updateThemeToggleIcon(newTheme);
+            applyTheme(newTheme);
+        });
+
+        // 更新主题切换图标
+        function updateThemeToggleIcon(theme) {
+            const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            themeToggle.innerHTML = isDark ?
+                `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>` :
+                `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+        }
+
+        // 初始化主题切换图标
+        updateThemeToggleIcon(currentConfig.theme);
 
         document.getElementById('bingUploadBgBtn').addEventListener('click', function(e) {
             e.stopPropagation();
@@ -925,17 +1012,12 @@
             }
         });
 
-        // 主题选择器实时预览
-        document.getElementById('bingThemeSelector').addEventListener('change', function() {
-            const theme = this.value;
-            applyTheme(theme);
-        });
-
         document.getElementById('bingSaveConfigBtn').addEventListener('click', function() {
             const config = getConfig();
             config.removehpTriviaOuter = document.getElementById('bingremovehpTriviaOuter').checked;
             config.removemusCard = document.getElementById('bingremovemusCard').checked;
-            config.theme = document.getElementById('bingThemeSelector').value;
+            config.removeVsDefault = document.getElementById('bingremoveVsDefault').checked;
+            config.removeFooter = document.getElementById('bingremoveFooter').checked;
             saveConfig(config);
             closePanel();
 
@@ -1008,6 +1090,18 @@
             if (config.removehpTriviaOuter) {
                 const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
                 if (hpTriviaOuter) hpTriviaOuter.remove();
+            }
+
+            // 监听并移除搜索框下方按钮
+            if (config.removeVsDefault) {
+                const vsDefault = document.getElementById('vs_default');
+                if (vsDefault) vsDefault.remove();
+            }
+
+            // 监听并移除页脚
+            if (config.removeFooter) {
+                const footer = document.getElementById('footer');
+                if (footer) footer.remove();
             }
         });
 
