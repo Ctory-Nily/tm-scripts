@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.9
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -1088,7 +1088,7 @@
 
             // 监听并移除问答卡片
             if (config.removehpTriviaOuter) {
-                const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
+                const hpTriviaOuter = document.querySelector('.hp_trivia_inner_new');
                 if (hpTriviaOuter) hpTriviaOuter.remove();
             }
 
@@ -1103,6 +1103,9 @@
                 const footer = document.getElementById('footer');
                 if (footer) footer.remove();
             }
+
+            // 重载配置
+            applyConfig(currentConfig);
         });
 
         observer.observe(document.body, {
