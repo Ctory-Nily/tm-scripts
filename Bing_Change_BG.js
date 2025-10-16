@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.0.9
+// @version      1.1.0
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -110,7 +110,7 @@
         }
 
         if (config.removemusCard) {
-            const hpTriviaOuter = document.querySelector('.hp_trivia_outer');
+            const hpTriviaOuter = document.querySelector('.hp_trivia_inner');
             if (hpTriviaOuter) hpTriviaOuter.remove();
         }
 
