@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -69,6 +69,7 @@
     // 保存配置
     function saveConfig(config) {
         GM_setValue(CONFIG_KEY, JSON.stringify(config));
+        applyThemeConfig(config);
         applyConfig(config);
     }
 
@@ -92,8 +93,12 @@
     }
 
     // 应用配置
-    function applyConfig(config) {
+    function applyThemeConfig(config) {
         applyTheme(config.theme);
+    }
+
+    function applyConfig(config) {
+        // applyTheme(config.theme);
 
         const bgImage = getBackgroundImage();
         const imgCont = document.querySelector('.img_cont');
@@ -838,6 +843,7 @@
         document.getElementById('bingremoveFooter').checked = currentConfig.removeFooter;
 
         // 应用配置
+        applyThemeConfig(currentConfig);
         applyConfig(currentConfig);
 
         // 事件监听
@@ -970,6 +976,7 @@
                             document.cookie = 'SRCHUSR=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
 
                             saveBackgroundImage(compressedDataUrl); // 保存压缩后的图片
+                            applyThemeConfig(getConfig());
                             applyConfig(getConfig());
                             showSaveSuccess('上传成功');
                         } catch (quotaError) {
@@ -1002,6 +1009,7 @@
         document.getElementById('bingResetBgBtn').addEventListener('click', function() {
             if (confirm('确定要重置背景图片吗？')) {
                 saveBackgroundImage('');
+                applyThemeConfig(getConfig());
                 applyConfig(getConfig());
 
                 document.cookie = 'SRCHD=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.bing.com';
