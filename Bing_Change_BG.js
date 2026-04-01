@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
