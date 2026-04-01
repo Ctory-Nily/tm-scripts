@@ -105,8 +105,8 @@
         const hpTopCover = document.querySelector('.hp_top_cover');
 
         if (bgImage) {
-            if (imgCont) imgCont.style.backgroundImage = `url("${bgImage}")`;
-            if (hpTopCover) hpTopCover.style.backgroundImage = `url("${bgImage}")`;
+            if (imgCont) imgCont.style.setProperty('background-image', `url("${bgImage}")`, 'important');
+            if (hpTopCover) hpTopCover.style.setProperty('background-image', `url("${bgImage}")`, 'important');
         }
 
         if (config.removehpTriviaOuter) {
