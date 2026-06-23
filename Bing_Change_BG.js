@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         必应首页自定义背景图片
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.4
 // @description  在首页添加配置按钮, 配置首页样式
 // @author       Ctory-Nily
 // @match        https://www.bing.com/*
@@ -43,6 +43,7 @@
         removemusCard: true,
         removeVsDefault: true,
         removeFooter: true,
+        removeModuleCont: true, // 新增：移除 moduleCont 模块
         theme: 'system'
     };
 
@@ -127,6 +128,12 @@
         if (config.removeFooter) {
             const footer = document.getElementById('footer');
             if (footer) footer.remove();
+        }
+
+        // 新增：移除 moduleCont 元素
+        if (config.removeModuleCont) {
+            const moduleCont = document.querySelector('.moduleCont');
+            if (moduleCont) moduleCont.remove();
         }
 
         updateScrollContStyle(config.removemusCard);
@@ -509,6 +516,40 @@
                 height: 30px;
             }
         }
+
+        /* ===== 新增：隐藏滚动条 ===== */
+        ::-webkit-scrollbar {
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        * {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+
+        body {
+            overflow-y: overlay !important;
+        }
+
+        body::-webkit-scrollbar {
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .sw-scrollable,
+        .scrollable,
+        .hp_scroll_cont {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+
+        .sw-scrollable::-webkit-scrollbar,
+        .scrollable::-webkit-scrollbar,
+        .hp_scroll_cont::-webkit-scrollbar {
+            width: 0 !important;
+            height: 0 !important;
+        }
     `);
 
     // 提示窗口
@@ -739,62 +780,69 @@
         const settingsPanel = document.createElement('div');
         settingsPanel.className = 'bing-settings-panel';
         settingsPanel.innerHTML = `
-            <h3>
-                <button class="bing-theme-toggle" id="bingThemeToggle" title="切换主题">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-                </button>
-                <span>Bing 背景配置</span>
-            </h3>
+        <h3>
+            <button class="bing-theme-toggle" id="bingThemeToggle" title="切换主题">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <span>Bing 背景配置</span>
+        </h3>
 
-            <div class="bing-settings-section">
-                <div class="bing-settings-row">
-                    <h4>背景配置</h4>
-                    <div class="bing-button-group">
-                        <button id="bingUploadBgBtn" class="bing-settings-btn-secondary">上传背景</button>
-                        <button id="bingResetBgBtn" class="bing-settings-btn-secondary">重置背景</button>
-                    </div>
+        <div class="bing-settings-section">
+            <div class="bing-settings-row">
+                <h4>背景配置</h4>
+                <div class="bing-button-group">
+                    <button id="bingUploadBgBtn" class="bing-settings-btn-secondary">上传背景</button>
+                    <button id="bingResetBgBtn" class="bing-settings-btn-secondary">重置背景</button>
                 </div>
             </div>
+        </div>
 
-            <div class="bing-settings-section">
-                <h4>元素配置</h4>
-                <div class="bing-settings-option">
-                    <label class="bing-switch">
-                        <input type="checkbox" id="bingremovehpTriviaOuter">
-                        <span class="bing-slider"></span>
-                    </label>
-                    <label for="bingremovehpTriviaOuter">移除问答卡片</label>
-                </div>
-                <div class="bing-settings-option">
-                    <label class="bing-switch">
-                        <input type="checkbox" id="bingremovemusCard">
-                        <span class="bing-slider"></span>
-                    </label>
-                    <label for="bingremovemusCard">移除切换图片按钮</label>
-                </div>
-                <div class="bing-settings-option">
-                    <label class="bing-switch">
-                        <input type="checkbox" id="bingremoveVsDefault">
-                        <span class="bing-slider"></span>
-                    </label>
-                    <label for="bingremoveVsDefault">移除设为主页按钮部分</label>
-                </div>
-                <div class="bing-settings-option">
-                    <label class="bing-switch">
-                        <input type="checkbox" id="bingremoveFooter">
-                        <span class="bing-slider"></span>
-                    </label>
-                    <label for="bingremoveFooter">移除页脚</label>
-                </div>
+        <div class="bing-settings-section">
+            <h4>元素配置</h4>
+            <div class="bing-settings-option">
+                <label class="bing-switch">
+                    <input type="checkbox" id="bingremovehpTriviaOuter">
+                    <span class="bing-slider"></span>
+                </label>
+                <label for="bingremovehpTriviaOuter">移除问答卡片</label>
             </div>
+            <div class="bing-settings-option">
+                <label class="bing-switch">
+                    <input type="checkbox" id="bingremovemusCard">
+                    <span class="bing-slider"></span>
+                </label>
+                <label for="bingremovemusCard">移除切换图片按钮</label>
+            </div>
+            <div class="bing-settings-option">
+                <label class="bing-switch">
+                    <input type="checkbox" id="bingremoveVsDefault">
+                    <span class="bing-slider"></span>
+                </label>
+                <label for="bingremoveVsDefault">移除设为主页按钮部分</label>
+            </div>
+            <div class="bing-settings-option">
+                <label class="bing-switch">
+                    <input type="checkbox" id="bingremoveFooter">
+                    <span class="bing-slider"></span>
+                </label>
+                <label for="bingremoveFooter">移除页脚</label>
+            </div>
+            <div class="bing-settings-option">
+                <label class="bing-switch">
+                    <input type="checkbox" id="bingremoveModuleCont">
+                    <span class="bing-slider"></span>
+                </label>
+                <label for="bingremoveModuleCont">移除图片介绍模块</label>
+            </div>
+        </div>
 
-            <div class="bing-settings-btn-group">
-                <button id="bingSaveConfigBtn" class="bing-settings-btn-primary">保存配置</button>
-                <button id="bingExportConfigBtn" class="bing-settings-btn-secondary">导出配置</button>
-                <button id="bingImportConfigBtn" class="bing-settings-btn-secondary">导入配置</button>
-                <button id="bingResetConfigBtn" class="bing-settings-btn-secondary">重置配置</button>
-            </div>
-        `;
+        <div class="bing-settings-btn-group">
+            <button id="bingSaveConfigBtn" class="bing-settings-btn-primary">保存配置</button>
+            <button id="bingExportConfigBtn" class="bing-settings-btn-secondary">导出配置</button>
+            <button id="bingImportConfigBtn" class="bing-settings-btn-secondary">导入配置</button>
+            <button id="bingResetConfigBtn" class="bing-settings-btn-secondary">重置配置</button>
+        </div>
+    `;
 
         // 将面板添加到遮罩层
         overlay.appendChild(settingsPanel);
@@ -841,6 +889,7 @@
         document.getElementById('bingremovemusCard').checked = currentConfig.removemusCard;
         document.getElementById('bingremoveVsDefault').checked = currentConfig.removeVsDefault;
         document.getElementById('bingremoveFooter').checked = currentConfig.removeFooter;
+        document.getElementById('bingremoveModuleCont').checked = currentConfig.removeModuleCont; // 新增
 
         // 应用配置
         applyThemeConfig(currentConfig);
@@ -1026,6 +1075,7 @@
             config.removemusCard = document.getElementById('bingremovemusCard').checked;
             config.removeVsDefault = document.getElementById('bingremoveVsDefault').checked;
             config.removeFooter = document.getElementById('bingremoveFooter').checked;
+            config.removeModuleCont = document.getElementById('bingremoveModuleCont').checked; // 新增
             saveConfig(config);
             closePanel();
 
@@ -1110,6 +1160,12 @@
             if (config.removeFooter) {
                 const footer = document.getElementById('footer');
                 if (footer) footer.remove();
+            }
+
+            // 新增：监听并移除 moduleCont 元素
+            if (config.removeModuleCont) {
+                const moduleCont = document.querySelector('.moduleCont');
+                if (moduleCont) moduleCont.remove();
             }
 
             // 重载配置
